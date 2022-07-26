@@ -36,6 +36,7 @@ if (Boolean(Number(ENABLE_CORS))) {
   });
 }
 
+fastify.removeAllContentTypeParsers();
 fastify.addContentTypeParser('*', { parseAs: 'string' }, (req, body, done) => done(null, body));
 
 fastify.addHook('onResponse', (request: FastifyRequest, response: FastifyReply) => {
