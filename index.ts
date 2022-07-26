@@ -12,6 +12,7 @@ const {
   BIND_PORT = process.env.PORT || 8080,
   HTTP_BODY_LIMIT = 1048576 * 2, // default is 2 MiB
   ENABLE_CORS = 0,
+  SHOW_CURL = 0,
 } = process.env;
 
 const fastify = Fastify({
@@ -37,7 +38,7 @@ if (Boolean(Number(ENABLE_CORS))) {
 fastify.addContentTypeParser('*', { parseAs: 'string' }, (req, body, done) => done(null, body));
 
 fastify.addHook('onResponse', (request: FastifyRequest, response: FastifyReply) => {
-  const logger = new RequestLogger(request, response);
+  const logger = new RequestLogger(request, response, { showCurl: SHOW_CURL == 1 });
 
   logger.log();
 });

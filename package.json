@@ -1,11 +1,13 @@
 {
   "name": "httplog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Logs all HTTP calls made to this application in cleartext.",
-  "contributors": [],
+  "contributors": [
+    {"name": "Zinzan"}
+  ],
   "repository": {
     "type": "git",
-    "url": "git+"
+    "url": "git+https://github.com/zinzan-vdm/docker-httplog.git"
   },
   "scripts": {
     "bootstrap": "npm install",
