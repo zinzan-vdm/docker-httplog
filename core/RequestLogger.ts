@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 
 import { FastifyReply, FastifyRequest } from 'fastify';
+import Curler from './Curler';
 
 type Options = {
   showCurl?: boolean;
@@ -16,6 +17,8 @@ export default class RequestLogger {
 
   private options: Options;
 
+  private curler: Curler;
+
   constructor(request: FastifyRequest, response: FastifyReply, options: Options = {}) {
     this.id = this.generateIdentifier();
 
@@ -23,6 +26,12 @@ export default class RequestLogger {
     this.response = response;
 
     this.options = options;
+
+    if (options.showCurl) this.curler = new Curler();
+  }
+
+  getId(): string {
+    return this.id;
   }
 
   private generateIdentifier(): string {
@@ -33,25 +42,7 @@ export default class RequestLogger {
   }
 
   private createCurl(): string {
-    const request = this.request;
-    const { method, headers, body } = request;
-
-    const headerOptions = Object.entries(headers).map(([header, value]) => `--header '${header}: ${value}'`);
-    const url = request.raw.url;
-
-    let curl = `curl \\\n  --request '${method}' \\\n  --url '${url}'`;
-
-    if (headerOptions.length) {
-      curl += ` \\\n  ${headerOptions.join(' \\\n  ')}`;
-    }
-
-    if (body) {
-      curl += ` \\\n  --data '${body}'`;
-    }
-
-    curl = curl.trim();
-
-    return curl;
+    return this.curler.generateCurl(this.request);
   }
 
   private logline(...input) {
@@ -71,13 +62,17 @@ export default class RequestLogger {
     this.logline(`  query:   ${JSON.stringify(query)}`);
     this.logline(`  headers: ${JSON.stringify(headers)}`);
     this.logline(`  body:    ${body}`);
-    this.logline(`  status:  200`);
-    this.logline(`  res:     {"ok":true}`);
     this.options.showCurl && this.logline(`  curl: \n${curl}`);
     this.logline('}');
   }
 
-  private logResponse() {}
+  private logResponse() {
+    this.logline(`RESPONSE (${this.id}) {`);
+    this.logline(`  status:  200`);
+    this.logline(`  headers: { "Content-Type": "application/json" }`);
+    this.logline(`  body:    { "ok": true }`);
+    this.logline('}');
+  }
 
   public log() {
     this.logRequest();
