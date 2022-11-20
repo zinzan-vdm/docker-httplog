@@ -4,6 +4,7 @@ import EventEmitter from './util/EventEmitter.js';
 import Renderer from './util/Renderer.js';
 
 import LoadingPage from './pages/loading/loading.js';
+import ErrorPage from './pages/error/error.js';
 import LogsPage from './pages/logs/logs.js';
 
 const app = new EventBasedApplication();
@@ -16,6 +17,7 @@ const renderer = new Renderer({
 
 const pages = {
   loading: new LoadingPage(),
+  error: new ErrorPage(),
   logs: new LogsPage(),
 };
 
@@ -63,7 +65,7 @@ app.register('websocket://init', async app => {
         stateWebsocket._.socket.send(payload);
       },
       reconnect() {
-        setTimeout(() => app.run('websocket://connect'), 10000);
+        setTimeout(() => app.run('websocket://connect'), 2000);
       },
     },
   };
@@ -138,8 +140,8 @@ app.register('provider://env', async app => {
   const response = await fetch('env.json');
 
   if (!response.ok) {
-    app.run('page://error/provider', { message: 'Failed to load /env.json' });
-    return;
+    app.run('page://error/provider', { message: 'Failed to load /env.json. Please refresh the page to reload.' });
+    throw new Error('Failed to load env.json.');
   }
 
   const env = await response.json();
@@ -169,9 +171,27 @@ app.register('page://loading', async app => {
   renderer.render(pages.loading);
 });
 
-app.register('page://error/setup', async app => {});
-app.register('page://error/websocket', async app => {});
-app.register('page://error/provider', async (app, { message }) => {});
+app.register('page://error/setup', async app => renderer.render(pages.error));
+
+app.register('page://error/websocket', async app => {
+  const websocket = app.get('websocket');
+
+  function navigateToLogsAndUnregister() {
+    websocket.off('socket://ready', navigateToLogsAndUnregister);
+
+    app.run('page://logs');
+  }
+
+  websocket.on('socket://ready', navigateToLogsAndUnregister);
+
+  renderer.render(pages.error, {
+    message: 'Websocket connection was lost or could not be established. Retrying to connect.',
+  });
+});
+
+app.register('page://error', async (app, { message, onFix, onFixLabel }) => {
+  renderer.render(pages.error, { message, onFix, onFixLabel });
+});
 
 app.register('page://logs', async app => {
   renderer.render(pages.logs);
