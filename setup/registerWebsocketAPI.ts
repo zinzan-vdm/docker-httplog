@@ -43,8 +43,8 @@ export default (fastify: FastifyInstance, logStore: LogStore) => {
     }
 
     if (WSAPI_USER) {
-      let expectedBasic = encodeURIComponent(WSAPI_USER) + ':';
-      if (WSAPI_PASSWORD) expectedBasic += encodeURIComponent(WSAPI_PASSWORD);
+      let expectedBasic = WSAPI_USER + ':';
+      if (WSAPI_PASSWORD) expectedBasic += WSAPI_PASSWORD;
 
       expectedBasic = Buffer.from(expectedBasic, 'utf-8').toString('base64');
 

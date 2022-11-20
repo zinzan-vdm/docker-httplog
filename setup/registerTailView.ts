@@ -11,8 +11,8 @@ export default (fastify: FastifyInstance) => {
 
   fastify.register(async fastify => {
     if (TAIL_UI_USER) {
-      let expectedBasic = encodeURIComponent(TAIL_UI_USER) + ':';
-      if (TAIL_UI_PASSWORD) expectedBasic += encodeURIComponent(TAIL_UI_PASSWORD);
+      let expectedBasic = TAIL_UI_USER + ':';
+      if (TAIL_UI_PASSWORD) expectedBasic += TAIL_UI_PASSWORD;
 
       expectedBasic = Buffer.from(expectedBasic, 'utf-8').toString('base64');
 
