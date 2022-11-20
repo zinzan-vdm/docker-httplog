@@ -1,9 +1,17 @@
 import Websocket, { SocketStream } from '@fastify/websocket';
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import LogStore, { Log } from '../core/LogStore';
 
 export default (fastify: FastifyInstance, logStore: LogStore) => {
-  const { ENABLE_TAIL_UI = 0, ENABLE_WSAPI = ENABLE_TAIL_UI, WEBSOCKET_API_ENDPOINT = '/~/ws' } = process.env;
+  const {
+    ENABLE_TAIL_UI = 0,
+    ENABLE_WSAPI = ENABLE_TAIL_UI,
+    WEBSOCKET_API_ENDPOINT = '/~/ws',
+    TAIL_UI_USER,
+    WSAPI_USER = TAIL_UI_USER,
+    TAIL_UI_PASSWORD,
+    WSAPI_PASSWORD = TAIL_UI_PASSWORD,
+  } = process.env;
 
   if (Number(ENABLE_WSAPI) !== 1) return;
 
@@ -32,6 +40,43 @@ export default (fastify: FastifyInstance, logStore: LogStore) => {
       payload.data = payload.data === undefined || payload.data === null ? {} : payload.data;
 
       return payload;
+    }
+
+    if (WSAPI_USER) {
+      let expectedBasic = encodeURIComponent(WSAPI_USER) + ':';
+      if (WSAPI_PASSWORD) expectedBasic += encodeURIComponent(WSAPI_PASSWORD);
+
+      expectedBasic = Buffer.from(expectedBasic, 'utf-8').toString('base64');
+
+      function authenticate(basic: string): boolean {
+        return basic === expectedBasic;
+      }
+
+      function failAuthentication(response: FastifyReply) {
+        response
+          .header('WWW-Authenticate', 'Basic realm="Tail UI is set to require authentication"')
+          .status(401)
+          .send('Unauthorized');
+      }
+
+      fastify.addHook('onRequest', async (request, response) => {
+        if (request.url.startsWith(WEBSOCKET_API_ENDPOINT)) {
+          let authorization = request.headers['authorization'] || request.headers['Authorization'];
+          Array.isArray(authorization) && (authorization = authorization[0]);
+
+          if (!authorization) {
+            failAuthentication(response);
+            return;
+          }
+
+          const basic = authorization.replace(/Basic\s+/, '');
+
+          if (!authenticate(basic)) {
+            failAuthentication(response);
+            return;
+          }
+        }
+      });
     }
 
     fastify.get(
