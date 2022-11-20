@@ -19,7 +19,7 @@ const {
   LOG_RETENTION_SIZE = 0,
 } = process.env;
 
-const logStore = new LogStore({ retentionSize: 2 || Number(LOG_RETENTION_SIZE) || 0 });
+const logStore = new LogStore({ retentionSize: Number(LOG_RETENTION_SIZE) || 0 });
 
 const fastify = Fastify({
   ignoreTrailingSlash: true,
@@ -29,7 +29,7 @@ const fastify = Fastify({
   frameworkErrors: function (error, req, res) {
     return res.code(500).send();
   },
-  pluginTimeout: 5000 || 30000,
+  pluginTimeout: 30000,
 });
 
 fastify.register(Helmet, {
