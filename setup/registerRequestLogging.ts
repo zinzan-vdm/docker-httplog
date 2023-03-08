@@ -4,6 +4,7 @@ import RequestLogger from '../core/RequestLogger';
 
 export default (fastify: FastifyInstance, logStore: LogStore) => {
   const {
+    ENABLE_CORS = 0,
     SHOW_CURL = 0,
     HEALTH_ENDPOINT = '/health',
     ENABLE_TAIL_UI = 0,
@@ -33,8 +34,11 @@ export default (fastify: FastifyInstance, logStore: LogStore) => {
       }
     });
 
+    const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
+    if (!Boolean(Number(ENABLE_CORS))) methods.push('OPTIONS');
+
     fastify.route({
-      method: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+      method: methods as any,
       url: '/*',
       handler: async (request: FastifyRequest, response: FastifyReply) => {
         response.status(200).send({ ok: true });
