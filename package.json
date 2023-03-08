@@ -1,6 +1,6 @@
 {
   "name": "httplog",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Logs all HTTP calls made to this application in cleartext.",
   "contributors": [
     {
